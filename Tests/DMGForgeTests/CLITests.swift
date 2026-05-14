@@ -87,3 +87,147 @@ import DMGForgeCore
     #expect(result == .success)
     #expect(!FileManager.default.fileExists(atPath: outputURL.path))
 }
+
+@Test func cliCopyUpdatesProjectTextFields() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let projectURL = tempRoot.appendingPathComponent("MyApp.dmgproject")
+    try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+    let project = DMGProjectFactory.makeDefault(
+        appPath: "dist/MyApp.app",
+        appName: "MyApp",
+        version: "1.0.0"
+    )
+    try project.prettyJSONData().write(to: projectURL)
+
+    let result = CLI().run(arguments: [
+        "copy",
+        projectURL.path,
+        "--title", "Install MyApp",
+        "--description", "Drag MyApp into Applications.",
+        "--footer", "Signed and ready."
+    ])
+
+    let updated = try DMGProject.decode(from: Data(contentsOf: projectURL))
+    #expect(result == .success)
+    #expect(updated.background.title == "Install MyApp")
+    #expect(updated.background.description == "Drag MyApp into Applications.")
+    #expect(updated.background.footer == "Signed and ready.")
+}
+
+@Test func cliBackgroundSetsCustomImageAndGeneratedMode() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let projectURL = tempRoot.appendingPathComponent("MyApp.dmgproject")
+    let imageURL = tempRoot.appendingPathComponent("background.png")
+    try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+    try Data([0x89, 0x50, 0x4E, 0x47]).write(to: imageURL)
+    defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+    let project = DMGProjectFactory.makeDefault(
+        appPath: "dist/MyApp.app",
+        appName: "MyApp",
+        version: "1.0.0"
+    )
+    try project.prettyJSONData().write(to: projectURL)
+
+    let imageResult = CLI().run(arguments: [
+        "background",
+        projectURL.path,
+        "--image", imageURL.path
+    ])
+    let imageProject = try DMGProject.decode(from: Data(contentsOf: projectURL))
+
+    let generatedResult = CLI().run(arguments: [
+        "background",
+        projectURL.path,
+        "--generated"
+    ])
+    let generatedProject = try DMGProject.decode(from: Data(contentsOf: projectURL))
+
+    #expect(imageResult == .success)
+    #expect(imageProject.background.mode == .image)
+    #expect(imageProject.background.imagePath == imageURL.path)
+    #expect(generatedResult == .success)
+    #expect(generatedProject.background.mode == .generated)
+    #expect(generatedProject.background.imagePath == nil)
+}
+
+@Test func cliArrowUpdatesGuideArrowSettings() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let projectURL = tempRoot.appendingPathComponent("MyApp.dmgproject")
+    try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+    let project = DMGProjectFactory.makeDefault(
+        appPath: "dist/MyApp.app",
+        appName: "MyApp",
+        version: "1.0.0"
+    )
+    try project.prettyJSONData().write(to: projectURL)
+
+    let hideResult = CLI().run(arguments: ["arrow", projectURL.path, "--hide"])
+    let hiddenProject = try DMGProject.decode(from: Data(contentsOf: projectURL))
+
+    let customResult = CLI().run(arguments: [
+        "arrow",
+        projectURL.path,
+        "--show",
+        "--color", "#FFFFFF",
+        "--thickness", "5"
+    ])
+    let customProject = try DMGProject.decode(from: Data(contentsOf: projectURL))
+
+    #expect(hideResult == .success)
+    #expect(!hiddenProject.guideArrow.visible)
+    #expect(customResult == .success)
+    #expect(customProject.guideArrow.visible)
+    #expect(customProject.guideArrow.color == "#FFFFFF")
+    #expect(customProject.guideArrow.thickness == 5)
+}
+
+@Test func cliArrowRejectsInvalidThickness() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let projectURL = tempRoot.appendingPathComponent("MyApp.dmgproject")
+    try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+    let project = DMGProjectFactory.makeDefault(
+        appPath: "dist/MyApp.app",
+        appName: "MyApp",
+        version: "1.0.0"
+    )
+    try project.prettyJSONData().write(to: projectURL)
+
+    let result = CLI().run(arguments: ["arrow", projectURL.path, "--thickness", "0"])
+
+    #expect(result == .usageError)
+}
+
+@Test func cliReviewDryRunValidatesProjectWithoutWritingDMG() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let appURL = tempRoot.appendingPathComponent("dist/MyApp.app", isDirectory: true)
+    let projectURL = tempRoot.appendingPathComponent("packaging/MyApp.dmgproject")
+    let outputURL = tempRoot.appendingPathComponent("dist/MyApp.dmg")
+    try FileManager.default.createDirectory(at: appURL, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: projectURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+    var project = DMGProjectFactory.makeDefault(
+        appPath: appURL.path,
+        appName: "MyApp",
+        version: "1.0.0"
+    )
+    project.outputPath = outputURL.path
+    try project.prettyJSONData().write(to: projectURL)
+
+    let result = CLI().run(arguments: ["review", projectURL.path, "--dry-run"])
+
+    #expect(result == .success)
+    #expect(!FileManager.default.fileExists(atPath: outputURL.path))
+}

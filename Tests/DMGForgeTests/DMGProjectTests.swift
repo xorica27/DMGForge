@@ -19,6 +19,9 @@ import Testing
     #expect(project.layout.appIcon.x == 190)
     #expect(project.layout.applicationsIcon.x == 500)
     #expect(project.background.title == "Drag to install")
+    #expect(project.guideArrow.visible)
+    #expect(project.guideArrow.color == "#FF293F")
+    #expect(project.guideArrow.thickness == 7)
 }
 
 @Test func projectRoundTripsThroughPrettyJSON() throws {
@@ -33,6 +36,38 @@ import Testing
 
     #expect(decoded == original)
     #expect(String(decoding: data, as: UTF8.self).contains("\"schemaVersion\" : 1"))
+}
+
+@Test func projectDecodesLegacyJSONWithoutGuideArrow() throws {
+    let json = """
+    {
+      "schemaVersion": 1,
+      "appName": "LegacyApp",
+      "version": "1.0.0",
+      "appPath": "dist/LegacyApp.app",
+      "outputPath": "dist/LegacyApp.dmg",
+      "volumeName": "LegacyApp 1.0.0",
+      "window": {
+        "width": 680,
+        "height": 420
+      },
+      "layout": {
+        "appIcon": { "x": 190, "y": 198 },
+        "applicationsIcon": { "x": 500, "y": 198 }
+      },
+      "background": {
+        "mode": "generated",
+        "imagePath": null,
+        "title": "Drag to install",
+        "description": "Drop LegacyApp into Applications.",
+        "footer": "Packaged with DMGForge."
+      }
+    }
+    """
+
+    let decoded = try DMGProject.decode(from: Data(json.utf8))
+
+    #expect(decoded.guideArrow == .default)
 }
 
 @Test func validatorAcceptsExistingAppBundle() throws {
@@ -84,3 +119,17 @@ import Testing
     #expect(result.issues.contains(.windowTooSmall(width: 300, height: 200)))
 }
 
+@Test func validatorRejectsInvalidGuideArrowSettings() throws {
+    var project = DMGProjectFactory.makeDefault(
+        appPath: "dist/MyApp.app",
+        appName: "MyApp",
+        version: "1.0.0"
+    )
+    project.guideArrow.color = "red"
+    project.guideArrow.thickness = 0
+
+    let result = ProjectValidator().validate(project)
+
+    #expect(result.issues.contains(.invalidGuideArrowColor(color: "red")))
+    #expect(result.issues.contains(.invalidGuideArrowThickness(thickness: 0)))
+}

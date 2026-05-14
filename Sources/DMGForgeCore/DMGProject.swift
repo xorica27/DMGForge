@@ -10,6 +10,7 @@ public struct DMGProject: Codable, Equatable, Sendable {
     public var window: DMGWindow
     public var layout: DMGLayout
     public var background: DMGBackground
+    public var guideArrow: DMGGuideArrow
 
     public init(
         schemaVersion: Int,
@@ -20,7 +21,8 @@ public struct DMGProject: Codable, Equatable, Sendable {
         volumeName: String,
         window: DMGWindow,
         layout: DMGLayout,
-        background: DMGBackground
+        background: DMGBackground,
+        guideArrow: DMGGuideArrow = .default
     ) {
         self.schemaVersion = schemaVersion
         self.appName = appName
@@ -31,6 +33,34 @@ public struct DMGProject: Codable, Equatable, Sendable {
         self.window = window
         self.layout = layout
         self.background = background
+        self.guideArrow = guideArrow
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion
+        case appName
+        case version
+        case appPath
+        case outputPath
+        case volumeName
+        case window
+        case layout
+        case background
+        case guideArrow
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        self.appName = try container.decode(String.self, forKey: .appName)
+        self.version = try container.decode(String.self, forKey: .version)
+        self.appPath = try container.decode(String.self, forKey: .appPath)
+        self.outputPath = try container.decode(String.self, forKey: .outputPath)
+        self.volumeName = try container.decode(String.self, forKey: .volumeName)
+        self.window = try container.decode(DMGWindow.self, forKey: .window)
+        self.layout = try container.decode(DMGLayout.self, forKey: .layout)
+        self.background = try container.decode(DMGBackground.self, forKey: .background)
+        self.guideArrow = try container.decodeIfPresent(DMGGuideArrow.self, forKey: .guideArrow) ?? .default
     }
 
     public static func decode(from data: Data) throws -> DMGProject {
@@ -101,3 +131,20 @@ public enum DMGBackgroundMode: String, Codable, Equatable, Sendable {
     case image
 }
 
+public struct DMGGuideArrow: Codable, Equatable, Sendable {
+    public var visible: Bool
+    public var color: String
+    public var thickness: Int
+
+    public init(visible: Bool, color: String, thickness: Int) {
+        self.visible = visible
+        self.color = color
+        self.thickness = thickness
+    }
+
+    public static let `default` = DMGGuideArrow(
+        visible: true,
+        color: "#FF293F",
+        thickness: 7
+    )
+}

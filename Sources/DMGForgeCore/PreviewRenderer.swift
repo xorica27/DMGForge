@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import UniformTypeIdentifiers
 
 public enum PreviewRenderError: Error, Equatable, CustomStringConvertible, LocalizedError {
     case missingCustomImage(path: String)
@@ -27,41 +28,53 @@ public struct PreviewRenderer {
     }
 
     public func render(project: DMGProject, to outputURL: URL) throws {
+        try render(project: project, to: outputURL, includesFinderItems: true)
+    }
+
+    public func renderBackground(project: DMGProject, to outputURL: URL) throws {
+        try render(project: project, to: outputURL, includesFinderItems: false)
+    }
+
+    private func render(project: DMGProject, to outputURL: URL, includesFinderItems: Bool) throws {
         try fileManager.createDirectory(
             at: outputURL.deletingLastPathComponent(),
             withIntermediateDirectories: true
         )
 
-        switch project.background.mode {
-        case .image:
-            let imagePath = project.background.imagePath ?? ""
-            guard fileManager.fileExists(atPath: imagePath) else {
-                throw PreviewRenderError.missingCustomImage(path: imagePath)
-            }
-
-            if fileManager.fileExists(atPath: outputURL.path) {
-                try fileManager.removeItem(at: outputURL)
-            }
-            try fileManager.copyItem(at: URL(fileURLWithPath: imagePath), to: outputURL)
-
-        case .generated:
-            let image = generatedImage(for: project)
-            guard let tiffData = image.tiffRepresentation,
-                  let bitmap = NSBitmapImageRep(data: tiffData),
-                  let pngData = bitmap.representation(using: .png, properties: [:]) else {
-                throw PreviewRenderError.cannotCreatePNG
-            }
-            try pngData.write(to: outputURL)
+        let image = try renderedImage(for: project, includesFinderItems: includesFinderItems)
+        guard let tiffData = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData),
+              let pngData = bitmap.representation(using: .png, properties: [:]) else {
+            throw PreviewRenderError.cannotCreatePNG
         }
+        try pngData.write(to: outputURL)
     }
 
-    private func generatedImage(for project: DMGProject) -> NSImage {
+    private func renderedImage(for project: DMGProject, includesFinderItems: Bool) throws -> NSImage {
         let size = NSSize(width: project.window.width, height: project.window.height)
         let image = NSImage(size: size)
         let bounds = NSRect(origin: .zero, size: size)
 
         image.lockFocus()
-        drawBackground(in: bounds)
+        switch project.background.mode {
+        case .generated:
+            drawBackground(in: bounds)
+        case .image:
+            try drawCustomBackground(for: project, in: bounds)
+        }
+
+        drawProjectCopy(for: project, in: bounds)
+
+        if includesFinderItems {
+            drawFinderItems(for: project)
+        }
+        image.unlockFocus()
+
+        return image
+    }
+
+    private func drawProjectCopy(for project: DMGProject, in bounds: NSRect) {
+        let size = bounds.size
         drawCentered(
             project.background.title,
             rect: NSRect(x: 120, y: size.height - 75, width: size.width - 240, height: 26),
@@ -74,16 +87,33 @@ public struct PreviewRenderer {
             font: NSFont.systemFont(ofSize: 12, weight: .regular),
             color: NSColor(calibratedRed: 0.46, green: 0.48, blue: 0.54, alpha: 1)
         )
-        drawArrow(centerY: CGFloat(project.layout.appIcon.y + project.layout.applicationsIcon.y) / 2 + 22)
+        if project.guideArrow.visible {
+            drawArrow(
+                centerY: CGFloat(project.layout.appIcon.y + project.layout.applicationsIcon.y) / 2 + 22,
+                arrow: project.guideArrow
+            )
+        }
         drawCentered(
             project.background.footer,
             rect: NSRect(x: 90, y: 38, width: size.width - 180, height: 18),
             font: NSFont.systemFont(ofSize: 11, weight: .regular),
             color: NSColor(calibratedRed: 0.52, green: 0.54, blue: 0.60, alpha: 1)
         )
-        image.unlockFocus()
+    }
 
-        return image
+    private func drawCustomBackground(for project: DMGProject, in bounds: NSRect) throws {
+        let imagePath = project.background.imagePath ?? ""
+        guard fileManager.fileExists(atPath: imagePath),
+              let image = NSImage(contentsOfFile: imagePath) else {
+            throw PreviewRenderError.missingCustomImage(path: imagePath)
+        }
+
+        image.draw(
+            in: bounds,
+            from: NSRect(origin: .zero, size: image.size),
+            operation: .copy,
+            fraction: 1
+        )
     }
 
     private func drawBackground(in bounds: NSRect) {
@@ -98,12 +128,13 @@ public struct PreviewRenderer {
         topLine.stroke()
     }
 
-    private func drawArrow(centerY: CGFloat) {
-        let arrowColor = NSColor(calibratedRed: 1, green: 0.16, blue: 0.25, alpha: 0.95)
+    private func drawArrow(centerY: CGFloat, arrow: DMGGuideArrow) {
+        let arrowColor = NSColor(hex: arrow.color) ?? NSColor(calibratedRed: 1, green: 0.16, blue: 0.25, alpha: 0.95)
         arrowColor.setStroke()
+        let lineWidth = max(1, CGFloat(arrow.thickness))
 
         let arrowPath = NSBezierPath()
-        arrowPath.lineWidth = 7
+        arrowPath.lineWidth = lineWidth
         arrowPath.lineCapStyle = .round
         arrowPath.lineJoinStyle = .round
         arrowPath.move(to: NSPoint(x: 285, y: centerY))
@@ -111,13 +142,77 @@ public struct PreviewRenderer {
         arrowPath.stroke()
 
         let arrowHead = NSBezierPath()
-        arrowHead.lineWidth = 7
+        arrowHead.lineWidth = lineWidth
         arrowHead.lineCapStyle = .round
         arrowHead.lineJoinStyle = .round
         arrowHead.move(to: NSPoint(x: 370, y: centerY + 25))
         arrowHead.line(to: NSPoint(x: 395, y: centerY))
         arrowHead.line(to: NSPoint(x: 370, y: centerY - 25))
         arrowHead.stroke()
+    }
+
+    private func drawFinderItems(for project: DMGProject) {
+        let appLabel = URL(fileURLWithPath: project.appPath).lastPathComponent
+        drawFinderIcon(
+            appIcon(for: project.appPath),
+            label: appLabel.isEmpty ? "\(project.appName).app" : appLabel,
+            center: project.layout.appIcon
+        )
+        drawFinderIcon(
+            NSWorkspace.shared.icon(forFile: "/Applications"),
+            label: "Applications",
+            center: project.layout.applicationsIcon
+        )
+    }
+
+    private func appIcon(for appPath: String) -> NSImage {
+        var isDirectory: ObjCBool = false
+        if fileManager.fileExists(atPath: appPath, isDirectory: &isDirectory) {
+            return NSWorkspace.shared.icon(forFile: appPath)
+        }
+
+        return NSWorkspace.shared.icon(for: .applicationBundle)
+    }
+
+    private func drawFinderIcon(_ icon: NSImage, label: String, center point: DMGPoint) {
+        let iconSize: CGFloat = 96
+        let center = NSPoint(x: CGFloat(point.x), y: CGFloat(point.y))
+        let iconRect = NSRect(
+            x: center.x - iconSize / 2,
+            y: center.y - iconSize / 2,
+            width: iconSize,
+            height: iconSize
+        )
+
+        icon.draw(in: iconRect)
+
+        drawLabelShadow(
+            label,
+            rect: NSRect(x: center.x - 76, y: iconRect.minY - 28, width: 152, height: 18)
+        )
+    }
+
+    private func drawLabelShadow(_ text: String, rect: NSRect) {
+        let style = NSMutableParagraphStyle()
+        style.alignment = .center
+        let font = NSFont.systemFont(ofSize: 12, weight: .regular)
+
+        text.draw(
+            in: rect.offsetBy(dx: 0, dy: -1),
+            withAttributes: [
+                .font: font,
+                .foregroundColor: NSColor.white.withAlphaComponent(0.85),
+                .paragraphStyle: style
+            ]
+        )
+        text.draw(
+            in: rect,
+            withAttributes: [
+                .font: font,
+                .foregroundColor: NSColor(calibratedRed: 0.14, green: 0.15, blue: 0.18, alpha: 1),
+                .paragraphStyle: style
+            ]
+        )
     }
 
     private func drawCentered(_ text: String, rect: NSRect, font: NSFont, color: NSColor) {
@@ -131,5 +226,20 @@ public struct PreviewRenderer {
                 .paragraphStyle: style
             ]
         )
+    }
+}
+
+private extension NSColor {
+    convenience init?(hex: String) {
+        let trimmed = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        let raw = trimmed.hasPrefix("#") ? String(trimmed.dropFirst()) : trimmed
+        guard raw.count == 6, let value = Int(raw, radix: 16) else {
+            return nil
+        }
+
+        let red = CGFloat((value >> 16) & 0xFF) / 255
+        let green = CGFloat((value >> 8) & 0xFF) / 255
+        let blue = CGFloat(value & 0xFF) / 255
+        self.init(calibratedRed: red, green: green, blue: blue, alpha: 0.95)
     }
 }

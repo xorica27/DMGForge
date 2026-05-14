@@ -1,0 +1,33 @@
+{
+  "appName" : "DMGForge",
+  "appPath" : "dist\/DMGForge.app",
+  "background" : {
+    "description" : "Drop DMGForge into Applications.",
+    "footer" : "Packaged with DMGForge.",
+    "mode" : "generated",
+    "title" : "Drag to install"
+  },
+  "guideArrow" : {
+    "color" : "#FF293F",
+    "thickness" : 7,
+    "visible" : true
+  },
+  "layout" : {
+    "appIcon" : {
+      "x" : 190,
+      "y" : 198
+    },
+    "applicationsIcon" : {
+      "x" : 500,
+      "y" : 198
+    }
+  },
+  "outputPath" : "dist\/DMGForge-macos-arm64.dmg",
+  "schemaVersion" : 1,
+  "version" : "0.1.0",
+  "volumeName" : "DMGForge 0.1.0",
+  "window" : {
+    "height" : 420,
+    "width" : 680
+  }
+}

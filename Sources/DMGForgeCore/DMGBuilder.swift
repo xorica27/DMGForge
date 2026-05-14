@@ -59,7 +59,7 @@ public struct DMGBuilder {
             withDestinationURL: URL(fileURLWithPath: "/Applications", isDirectory: true)
         )
 
-        try previewRenderer.render(
+        try previewRenderer.renderBackground(
             project: project,
             to: backgroundDirectory.appendingPathComponent(Self.backgroundName)
         )

@@ -18,6 +18,8 @@ public enum ValidationIssue: Equatable, Sendable, CustomStringConvertible {
     case windowTooSmall(width: Int, height: Int)
     case missingBackgroundImage(path: String)
     case outputDirectoryMissing(path: String)
+    case invalidGuideArrowColor(color: String)
+    case invalidGuideArrowThickness(thickness: Int)
 
     public var description: String {
         switch self {
@@ -31,6 +33,10 @@ public enum ValidationIssue: Equatable, Sendable, CustomStringConvertible {
             "Background image does not exist: \(path)"
         case .outputDirectoryMissing(let path):
             "Output directory does not exist: \(path)"
+        case .invalidGuideArrowColor(let color):
+            "Guide arrow color must be #RRGGBB: \(color)"
+        case .invalidGuideArrowThickness(let thickness):
+            "Guide arrow thickness must be greater than 0, got \(thickness)"
         }
     }
 }
@@ -70,6 +76,24 @@ public struct ProjectValidator {
             issues.append(.outputDirectoryMissing(path: outputDirectory))
         }
 
+        if !Self.isHexColor(project.guideArrow.color) {
+            issues.append(.invalidGuideArrowColor(color: project.guideArrow.color))
+        }
+
+        if project.guideArrow.thickness <= 0 {
+            issues.append(.invalidGuideArrowThickness(thickness: project.guideArrow.thickness))
+        }
+
         return ValidationResult(issues: issues)
+    }
+
+    private static func isHexColor(_ value: String) -> Bool {
+        guard value.count == 7, value.first == "#" else {
+            return false
+        }
+
+        return value.dropFirst().allSatisfy { character in
+            character.isNumber || ("a"..."f").contains(character.lowercased())
+        }
     }
 }
