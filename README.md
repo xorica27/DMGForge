@@ -20,12 +20,13 @@ When Codex, Claude, or another agent finishes building a macOS app, the packagin
 ```bash
 dmgforge init --app dist/MyApp.app --name MyApp --version 1.0.0 --output packaging/MyApp.dmgproject
 dmgforge validate packaging/MyApp.dmgproject
-dmgforge preview packaging/MyApp.dmgproject
+dmgforge preview packaging/MyApp.dmgproject --output dist/MyApp-dmg-preview.png
+dmgforge export packaging/MyApp.dmgproject --dry-run
 dmgforge export packaging/MyApp.dmgproject
 dmgforge open packaging/MyApp.dmgproject
 ```
 
-The initial scaffold implements the project format, `init`, and `validate`. Preview, export, and GUI editing are the next implementation slice.
+The current build implements the project format, `init`, `validate`, `preview`, and `export`. GUI editing is the next implementation slice.
 
 Run CLI commands from the app repo root so relative paths such as `dist/MyApp.app` and `dist/MyApp-macos-arm64.dmg` resolve predictably.
 
