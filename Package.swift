@@ -15,7 +15,10 @@ let package = Package(
         .target(name: "DMGForgeCore"),
         .executableTarget(
             name: "DMGForge",
-            dependencies: ["DMGForgeCore"]
+            dependencies: ["DMGForgeCore"],
+            resources: [
+                .copy("Resources")
+            ]
         ),
         .testTarget(
             name: "DMGForgeTests",
@@ -23,4 +26,3 @@ let package = Package(
         )
     ]
 )
-

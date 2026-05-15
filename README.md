@@ -1,5 +1,9 @@
 # DMGForge
 
+<p align="center">
+  <img src="Sources/DMGForge/Resources/AppIcon.svg" alt="DMGForge icon" width="132">
+</p>
+
 DMGForge is a small macOS app for making polished drag-to-install `.dmg` installers.
 
 It is built for the moment after your app is done and you want a clean installer without hand-tuning Finder windows over and over. You can use it yourself in the app, or let Codex, Claude, or another coding agent call the CLI and open the real mounted DMG for you to review.
@@ -13,6 +17,12 @@ It is built for the moment after your app is done and you want a clean installer
 - Preview quickly as a PNG
 - Open the actual mounted DMG to see exactly what users will see
 - Let an agent create, tweak, and rebuild the installer from your app repo
+
+## App Preview
+
+<p align="center">
+  <img src="docs/assets/dmgforge-app-ui.png" alt="DMGForge app UI" width="960">
+</p>
 
 ## The Basic Flow
 
