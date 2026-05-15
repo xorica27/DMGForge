@@ -1,7 +1,7 @@
 # DMGForge
 
 <p align="center">
-  <img src="Sources/DMGForge/Resources/AppIcon.svg" alt="DMGForge icon" width="132">
+  <img src="Sources/DMGForge/Resources/AppIcon.png" alt="DMGForge icon" width="132">
 </p>
 
 DMGForge is a small macOS app for making polished drag-to-install `.dmg` installers.
