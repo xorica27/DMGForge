@@ -20,7 +20,7 @@ import Testing
     #expect(project.layout.applicationsIcon.x == 500)
     #expect(project.background.title == "Drag to install")
     #expect(project.guideArrow.visible)
-    #expect(project.guideArrow.color == "#FF293F")
+    #expect(project.guideArrow.color == "#444444")
     #expect(project.guideArrow.thickness == 7)
 }
 

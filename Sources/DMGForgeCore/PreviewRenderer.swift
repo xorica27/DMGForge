@@ -129,7 +129,7 @@ public struct PreviewRenderer {
     }
 
     private func drawArrow(centerY: CGFloat, arrow: DMGGuideArrow) {
-        let arrowColor = NSColor(hex: arrow.color) ?? NSColor(calibratedRed: 1, green: 0.16, blue: 0.25, alpha: 0.95)
+        let arrowColor = NSColor(hex: arrow.color) ?? NSColor(calibratedWhite: 0.267, alpha: 1)
         arrowColor.setStroke()
         let lineWidth = max(1, CGFloat(arrow.thickness))
 

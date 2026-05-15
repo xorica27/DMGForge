@@ -8,7 +8,7 @@
     "title" : "Drag to install"
   },
   "guideArrow" : {
-    "color" : "#FF293F",
+    "color" : "#444444",
     "thickness" : 7,
     "visible" : true
   },

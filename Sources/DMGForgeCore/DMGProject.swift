@@ -144,7 +144,7 @@ public struct DMGGuideArrow: Codable, Equatable, Sendable {
 
     public static let `default` = DMGGuideArrow(
         visible: true,
-        color: "#FF293F",
+        color: "#444444",
         thickness: 7
     )
 }

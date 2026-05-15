@@ -88,6 +88,32 @@ import Testing
     #expect(copyPixels > 100)
 }
 
+@Test func generatedBackgroundDrawsDefaultDarkGreyArrow() throws {
+    let tempRoot = try makeTempDirectory()
+    defer { try? FileManager.default.removeItem(at: tempRoot) }
+    let outputURL = tempRoot.appendingPathComponent("preview.png")
+
+    let project = DMGProjectFactory.makeDefault(
+        appPath: "dist/MyApp.app",
+        appName: "MyApp",
+        version: "1.0.0"
+    )
+
+    try PreviewRenderer().renderBackground(project: project, to: outputURL)
+
+    let outputImage = NSImage(contentsOf: outputURL)
+    let tiffData = try #require(outputImage?.tiffRepresentation)
+    let bitmap = try #require(NSBitmapImageRep(data: tiffData))
+    let scale = bitmap.pixelsWide / project.window.width
+    let arrowPixels = countDarkGreyArrowPixels(
+        in: bitmap,
+        xRange: 270 * scale..<410 * scale,
+        yRange: 180 * scale..<260 * scale
+    )
+
+    #expect(arrowPixels > 100)
+}
+
 @Test func generatedBackgroundSkipsArrowWhenGuideArrowIsHidden() throws {
     let tempRoot = try makeTempDirectory()
     defer { try? FileManager.default.removeItem(at: tempRoot) }
@@ -106,7 +132,7 @@ import Testing
     let tiffData = try #require(outputImage?.tiffRepresentation)
     let bitmap = try #require(NSBitmapImageRep(data: tiffData))
     let scale = bitmap.pixelsWide / project.window.width
-    let arrowPixels = countRedArrowPixels(
+    let arrowPixels = countDarkGreyArrowPixels(
         in: bitmap,
         xRange: 270 * scale..<410 * scale,
         yRange: 180 * scale..<260 * scale
@@ -182,7 +208,7 @@ private func countPixelsDifferentFrom(
     return count
 }
 
-private func countRedArrowPixels(
+private func countDarkGreyArrowPixels(
     in bitmap: NSBitmapImageRep,
     xRange: Range<Int>,
     yRange: Range<Int>
@@ -192,9 +218,9 @@ private func countRedArrowPixels(
     for x in xRange {
         for y in yRange {
             guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
-            if color.redComponent > 0.85 &&
-                color.greenComponent < 0.25 &&
-                color.blueComponent < 0.35 {
+            if color.redComponent > 0.35 && color.redComponent < 0.58 &&
+                color.greenComponent > 0.35 && color.greenComponent < 0.58 &&
+                color.blueComponent > 0.35 && color.blueComponent < 0.58 {
                 count += 1
             }
         }

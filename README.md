@@ -24,6 +24,12 @@ It is built for the moment after your app is done and you want a clean installer
   <img src="docs/assets/dmgforge-app-ui.png" alt="DMGForge app UI" width="960">
 </p>
 
+## Mounted DMG Preview
+
+<p align="center">
+  <img src="docs/assets/dmgforge-mounted-dmg-preview.png" alt="Mounted DMGForge installer window" width="960">
+</p>
+
 ## The Basic Flow
 
 1. Build your macOS app.
