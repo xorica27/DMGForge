@@ -88,8 +88,9 @@ public struct PreviewRenderer {
             color: NSColor(calibratedRed: 0.46, green: 0.48, blue: 0.54, alpha: 1)
         )
         if project.guideArrow.visible {
+            let finderCenterY = CGFloat(project.layout.appIcon.y + project.layout.applicationsIcon.y) / 2
             drawArrow(
-                centerY: CGFloat(project.layout.appIcon.y + project.layout.applicationsIcon.y) / 2 + 22,
+                centerY: size.height - finderCenterY + 22,
                 arrow: project.guideArrow
             )
         }
@@ -156,13 +157,30 @@ public struct PreviewRenderer {
         drawFinderIcon(
             appIcon(for: project.appPath),
             label: appLabel.isEmpty ? "\(project.appName).app" : appLabel,
-            center: project.layout.appIcon
+            center: project.layout.appIcon,
+            canvasHeight: project.window.height
         )
         drawFinderIcon(
             NSWorkspace.shared.icon(forFile: "/Applications"),
             label: "Applications",
-            center: project.layout.applicationsIcon
+            center: project.layout.applicationsIcon,
+            canvasHeight: project.window.height
         )
+
+        if project.firstLaunchGuide.enabled {
+            drawFinderIcon(
+                fileIcon(forExtension: "inetloc"),
+                label: project.firstLaunchGuide.securitySettingsShortcutName,
+                center: project.firstLaunchGuide.securitySettingsIcon,
+                canvasHeight: project.window.height
+            )
+            drawFinderIcon(
+                fileIcon(forExtension: "txt"),
+                label: project.firstLaunchGuide.helpFileName,
+                center: project.firstLaunchGuide.helpFileIcon,
+                canvasHeight: project.window.height
+            )
+        }
     }
 
     private func appIcon(for appPath: String) -> NSImage {
@@ -174,9 +192,14 @@ public struct PreviewRenderer {
         return NSWorkspace.shared.icon(for: .applicationBundle)
     }
 
-    private func drawFinderIcon(_ icon: NSImage, label: String, center point: DMGPoint) {
+    private func fileIcon(forExtension fileExtension: String) -> NSImage {
+        let contentType = UTType(filenameExtension: fileExtension) ?? .data
+        return NSWorkspace.shared.icon(for: contentType)
+    }
+
+    private func drawFinderIcon(_ icon: NSImage, label: String, center point: DMGPoint, canvasHeight: Int) {
         let iconSize: CGFloat = 96
-        let center = NSPoint(x: CGFloat(point.x), y: CGFloat(point.y))
+        let center = NSPoint(x: CGFloat(point.x), y: CGFloat(canvasHeight - point.y))
         let iconRect = NSRect(
             x: center.x - iconSize / 2,
             y: center.y - iconSize / 2,
@@ -186,15 +209,13 @@ public struct PreviewRenderer {
 
         icon.draw(in: iconRect)
 
-        drawLabelShadow(
-            label,
-            rect: NSRect(x: center.x - 76, y: iconRect.minY - 28, width: 152, height: 18)
-        )
+        drawLabelShadow(label, rect: NSRect(x: center.x - 76, y: iconRect.minY - 42, width: 152, height: 34))
     }
 
     private func drawLabelShadow(_ text: String, rect: NSRect) {
         let style = NSMutableParagraphStyle()
         style.alignment = .center
+        style.lineBreakMode = .byWordWrapping
         let font = NSFont.systemFont(ofSize: 12, weight: .regular)
 
         text.draw(

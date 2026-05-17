@@ -7,6 +7,21 @@
     "mode" : "generated",
     "title" : "Drag to install"
   },
+  "firstLaunchGuide" : {
+    "enabled" : false,
+    "helpFileIcon" : {
+      "x" : 500,
+      "y" : 420
+    },
+    "helpFileName" : "First Launch Help.txt",
+    "helpText" : "",
+    "securitySettingsIcon" : {
+      "x" : 190,
+      "y" : 420
+    },
+    "securitySettingsShortcutName" : "Open Security Settings.inetloc",
+    "securitySettingsURL" : "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
+  },
   "guideArrow" : {
     "color" : "#444444",
     "thickness" : 7,
@@ -24,8 +39,8 @@
   },
   "outputPath" : "dist\/DMGForge-macos-arm64.dmg",
   "schemaVersion" : 1,
-  "version" : "0.1.0",
-  "volumeName" : "DMGForge 0.1.0",
+  "version" : "0.1.1",
+  "volumeName" : "DMGForge 0.1.1",
   "window" : {
     "height" : 420,
     "width" : 680

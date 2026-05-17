@@ -59,6 +59,19 @@ import DMGForgeCore
     #expect(viewModel.previewImage != nil)
 }
 
+@MainActor
+@Test func editorEnablesFirstLaunchGuideAndExpandsWindow() throws {
+    let viewModel = ProjectEditorViewModel()
+
+    viewModel.setFirstLaunchGuideEnabled(true)
+
+    #expect(viewModel.project.firstLaunchGuide.enabled)
+    #expect(viewModel.project.window.height == 560)
+    #expect(viewModel.project.layout.appIcon == DMGPoint(x: 190, y: 210))
+    #expect(viewModel.project.background.title == "Install MyApp")
+    #expect(viewModel.previewImage != nil)
+}
+
 private func makeEditorTempDirectory() throws -> URL {
     let url = FileManager.default.temporaryDirectory
         .appendingPathComponent(UUID().uuidString, isDirectory: true)

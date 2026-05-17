@@ -14,6 +14,7 @@ It is built for the moment after your app is done and you want a clean installer
 - Use the default installer look with no design work
 - Edit the title, description, footer, app positions, and install arrow
 - Use your own background image
+- Include first-launch help for unsigned apps
 - Preview quickly as a PNG
 - Open the actual mounted DMG to see exactly what users will see
 - Let an agent create, tweak, and rebuild the installer from your app repo
@@ -49,7 +50,7 @@ scripts/build.sh
 open dist/DMGForge.app
 ```
 
-From the app you can choose the app bundle, output location, background style, installer text, icon positions, and guide arrow settings.
+From the app you can choose the app bundle, output location, background style, installer text, icon positions, guide arrow settings, and optional first-launch help for unsigned apps.
 
 If you want DMGForge installed like a normal app:
 
@@ -91,6 +92,14 @@ Hide or customize the guide arrow:
 dmgforge arrow packaging/MyApp.dmgproject --hide
 dmgforge arrow packaging/MyApp.dmgproject --show --color "#FFFFFF" --thickness 5
 ```
+
+Include unsigned-app first-launch help:
+
+```bash
+dmgforge first-launch packaging/MyApp.dmgproject --enable
+```
+
+This adds `First Launch Help.txt` plus `Open Security Settings.inetloc` to the DMG and positions them below the main install icons.
 
 Export the final DMG:
 

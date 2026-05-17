@@ -29,6 +29,7 @@ struct ContentView: View {
             Form {
                 projectSection
                 backgroundSection
+                firstLaunchGuideSection
                 arrowSection
                 layoutSection
                 validationSection
@@ -148,6 +149,36 @@ struct ContentView: View {
                     TextField("X", value: $viewModel.project.layout.applicationsIcon.x, format: .number)
                     TextField("Y", value: $viewModel.project.layout.applicationsIcon.y, format: .number)
                 }
+
+                if viewModel.project.firstLaunchGuide.enabled {
+                    GridRow {
+                        Text("Security help")
+                            .foregroundStyle(.secondary)
+                        TextField("X", value: $viewModel.project.firstLaunchGuide.securitySettingsIcon.x, format: .number)
+                        TextField("Y", value: $viewModel.project.firstLaunchGuide.securitySettingsIcon.y, format: .number)
+                    }
+
+                    GridRow {
+                        Text("Help file")
+                            .foregroundStyle(.secondary)
+                        TextField("X", value: $viewModel.project.firstLaunchGuide.helpFileIcon.x, format: .number)
+                        TextField("Y", value: $viewModel.project.firstLaunchGuide.helpFileIcon.y, format: .number)
+                    }
+                }
+            }
+        }
+    }
+
+    private var firstLaunchGuideSection: some View {
+        Section("First Launch Help") {
+            Toggle("Include unsigned-app helper", isOn: firstLaunchGuideEnabledBinding)
+
+            if viewModel.project.firstLaunchGuide.enabled {
+                TextField("Security shortcut", text: $viewModel.project.firstLaunchGuide.securitySettingsShortcutName)
+                TextField("Help file", text: $viewModel.project.firstLaunchGuide.helpFileName)
+                TextField("Security URL", text: $viewModel.project.firstLaunchGuide.securitySettingsURL)
+                TextField("Help text", text: $viewModel.project.firstLaunchGuide.helpText, axis: .vertical)
+                    .lineLimit(4...8)
             }
         }
     }
@@ -271,6 +302,13 @@ struct ContentView: View {
             set: { newValue in
                 viewModel.project.background.imagePath = newValue.isEmpty ? nil : newValue
             }
+        )
+    }
+
+    private var firstLaunchGuideEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.project.firstLaunchGuide.enabled },
+            set: { viewModel.setFirstLaunchGuideEnabled($0) }
         )
     }
 

@@ -35,6 +35,8 @@ struct CLI {
             return runBackground(arguments: Array(arguments.dropFirst()))
         case "arrow":
             return runArrow(arguments: Array(arguments.dropFirst()))
+        case "first-launch":
+            return runFirstLaunch(arguments: Array(arguments.dropFirst()))
         case "open":
             return runOpen(arguments: Array(arguments.dropFirst()))
         default:
@@ -336,6 +338,43 @@ struct CLI {
         return .success
     }
 
+    private func runFirstLaunch(arguments: [String]) -> ExitCode {
+        guard let projectPath = arguments.first, !projectPath.hasPrefix("--") else {
+            fputs("Usage: dmgforge first-launch <Project.dmgproject> (--enable | --disable) [--help-file <Name.txt>] [--security-shortcut <Name.inetloc>] [--help-text <Text>]\n", stderr)
+            return .usageError
+        }
+
+        let trailingArguments = Array(arguments.dropFirst())
+        let hasEnable = trailingArguments.contains("--enable")
+        let hasDisable = trailingArguments.contains("--disable")
+        guard hasEnable != hasDisable else {
+            fputs("Choose either --enable or --disable.\n", stderr)
+            return .usageError
+        }
+
+        do {
+            var project = try loadProject(at: projectPath)
+            let options = parseOptions(trailingArguments)
+            project.setFirstLaunchGuideEnabled(hasEnable)
+            if let helpFile = options["help-file"] {
+                project.firstLaunchGuide.helpFileName = helpFile
+            }
+            if let securityShortcut = options["security-shortcut"] {
+                project.firstLaunchGuide.securitySettingsShortcutName = securityShortcut
+            }
+            if let helpText = options["help-text"] {
+                project.firstLaunchGuide.helpText = helpText
+            }
+
+            try saveProject(project, at: projectPath)
+            print("Updated first launch guide in \(projectPath)")
+            return .success
+        } catch {
+            fputs("Could not update first launch guide: \(error.localizedDescription)\n", stderr)
+            return .failure
+        }
+    }
+
     private func loadProject(at path: String) throws -> DMGProject {
         let data = try Data(contentsOf: URL(fileURLWithPath: path))
         return try DMGProject.decode(from: data)
@@ -392,6 +431,7 @@ struct CLI {
       dmgforge copy <Project.dmgproject> [--title <Text>] [--description <Text>] [--footer <Text>]
       dmgforge background <Project.dmgproject> (--image <Image.png> | --generated)
       dmgforge arrow <Project.dmgproject> [--show | --hide] [--color <#RRGGBB>] [--thickness <Pixels>]
+      dmgforge first-launch <Project.dmgproject> (--enable | --disable)
       dmgforge open <Project.dmgproject>
     """
 }

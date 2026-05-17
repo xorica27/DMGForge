@@ -20,6 +20,8 @@ public enum ValidationIssue: Equatable, Sendable, CustomStringConvertible {
     case outputDirectoryMissing(path: String)
     case invalidGuideArrowColor(color: String)
     case invalidGuideArrowThickness(thickness: Int)
+    case invalidFirstLaunchGuideFileName(name: String)
+    case invalidFirstLaunchGuideURL(url: String)
 
     public var description: String {
         switch self {
@@ -37,6 +39,10 @@ public enum ValidationIssue: Equatable, Sendable, CustomStringConvertible {
             "Guide arrow color must be #RRGGBB: \(color)"
         case .invalidGuideArrowThickness(let thickness):
             "Guide arrow thickness must be greater than 0, got \(thickness)"
+        case .invalidFirstLaunchGuideFileName(let name):
+            "First launch guide file names must be plain file names: \(name)"
+        case .invalidFirstLaunchGuideURL(let url):
+            "First launch security settings URL is invalid: \(url)"
         }
     }
 }
@@ -84,6 +90,18 @@ public struct ProjectValidator {
             issues.append(.invalidGuideArrowThickness(thickness: project.guideArrow.thickness))
         }
 
+        if project.firstLaunchGuide.enabled {
+            if !Self.isPlainFileName(project.firstLaunchGuide.helpFileName) {
+                issues.append(.invalidFirstLaunchGuideFileName(name: project.firstLaunchGuide.helpFileName))
+            }
+            if !Self.isPlainFileName(project.firstLaunchGuide.securitySettingsShortcutName) {
+                issues.append(.invalidFirstLaunchGuideFileName(name: project.firstLaunchGuide.securitySettingsShortcutName))
+            }
+            if project.firstLaunchGuide.securitySettingsURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                issues.append(.invalidFirstLaunchGuideURL(url: project.firstLaunchGuide.securitySettingsURL))
+            }
+        }
+
         return ValidationResult(issues: issues)
     }
 
@@ -95,5 +113,10 @@ public struct ProjectValidator {
         return value.dropFirst().allSatisfy { character in
             character.isNumber || ("a"..."f").contains(character.lowercased())
         }
+    }
+
+    private static func isPlainFileName(_ value: String) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && !trimmed.contains("/") && !trimmed.contains("\\")
     }
 }

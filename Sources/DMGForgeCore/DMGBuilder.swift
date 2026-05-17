@@ -58,6 +58,7 @@ public struct DMGBuilder {
             at: stagingURL.appendingPathComponent("Applications"),
             withDestinationURL: URL(fileURLWithPath: "/Applications", isDirectory: true)
         )
+        try stageFirstLaunchGuide(project: project, at: stagingURL)
 
         try previewRenderer.renderBackground(
             project: project,
@@ -143,6 +144,16 @@ public struct DMGBuilder {
     public static func finderAppleScript(project: DMGProject, mountPoint: String, backgroundName: String) -> String {
         let windowRight = 140 + project.window.width
         let windowBottom = 140 + project.window.height
+        let iconSize = project.firstLaunchGuide.enabled ? 96 : 112
+        let firstLaunchGuideLayout: String
+        if project.firstLaunchGuide.enabled {
+            firstLaunchGuideLayout = """
+            set position of item "\(appleScriptEscaped(project.firstLaunchGuide.securitySettingsShortcutName))" of container window to {\(project.firstLaunchGuide.securitySettingsIcon.x), \(project.firstLaunchGuide.securitySettingsIcon.y)}
+            set position of item "\(appleScriptEscaped(project.firstLaunchGuide.helpFileName))" of container window to {\(project.firstLaunchGuide.helpFileIcon.x), \(project.firstLaunchGuide.helpFileIcon.y)}
+        """
+        } else {
+            firstLaunchGuideLayout = ""
+        }
 
         return """
         tell application "Finder"
@@ -157,11 +168,12 @@ public struct DMGBuilder {
 
             set viewOptions to icon view options of container window
             set arrangement of viewOptions to not arranged
-            set icon size of viewOptions to 112
+            set icon size of viewOptions to \(iconSize)
             set background picture of viewOptions to file ".background:\(backgroundName)"
 
-            set position of item "\(project.appName).app" of container window to {\(project.layout.appIcon.x), \(project.layout.appIcon.y)}
+            set position of item "\(appleScriptEscaped(project.appName)).app" of container window to {\(project.layout.appIcon.x), \(project.layout.appIcon.y)}
             set position of item "Applications" of container window to {\(project.layout.applicationsIcon.x), \(project.layout.applicationsIcon.y)}
+            \(firstLaunchGuideLayout)
 
             update without registering applications
             set bounds of container window to {140, 140, \(windowRight), \(windowBottom)}
@@ -170,6 +182,31 @@ public struct DMGBuilder {
           end tell
         end tell
         """
+    }
+
+    private func stageFirstLaunchGuide(project: DMGProject, at stagingURL: URL) throws {
+        let guide = project.firstLaunchGuide
+        guard guide.enabled else { return }
+
+        let plistData = try PropertyListSerialization.data(
+            fromPropertyList: ["URL": guide.securitySettingsURL],
+            format: .xml,
+            options: 0
+        )
+        try plistData.write(to: stagingURL.appendingPathComponent(guide.securitySettingsShortcutName))
+
+        let helpText = guide.resolvedHelpText(appName: project.appName)
+        try helpText.write(
+            to: stagingURL.appendingPathComponent(guide.helpFileName),
+            atomically: true,
+            encoding: .utf8
+        )
+    }
+
+    private static func appleScriptEscaped(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
     }
 
     private func requireTool(_ tool: String) throws {

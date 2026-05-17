@@ -11,6 +11,7 @@ public struct DMGProject: Codable, Equatable, Sendable {
     public var layout: DMGLayout
     public var background: DMGBackground
     public var guideArrow: DMGGuideArrow
+    public var firstLaunchGuide: DMGFirstLaunchGuide
 
     public init(
         schemaVersion: Int,
@@ -22,7 +23,8 @@ public struct DMGProject: Codable, Equatable, Sendable {
         window: DMGWindow,
         layout: DMGLayout,
         background: DMGBackground,
-        guideArrow: DMGGuideArrow = .default
+        guideArrow: DMGGuideArrow = .default,
+        firstLaunchGuide: DMGFirstLaunchGuide = .default
     ) {
         self.schemaVersion = schemaVersion
         self.appName = appName
@@ -34,6 +36,7 @@ public struct DMGProject: Codable, Equatable, Sendable {
         self.layout = layout
         self.background = background
         self.guideArrow = guideArrow
+        self.firstLaunchGuide = firstLaunchGuide
     }
 
     enum CodingKeys: String, CodingKey {
@@ -47,6 +50,7 @@ public struct DMGProject: Codable, Equatable, Sendable {
         case layout
         case background
         case guideArrow
+        case firstLaunchGuide
     }
 
     public init(from decoder: Decoder) throws {
@@ -61,6 +65,7 @@ public struct DMGProject: Codable, Equatable, Sendable {
         self.layout = try container.decode(DMGLayout.self, forKey: .layout)
         self.background = try container.decode(DMGBackground.self, forKey: .background)
         self.guideArrow = try container.decodeIfPresent(DMGGuideArrow.self, forKey: .guideArrow) ?? .default
+        self.firstLaunchGuide = try container.decodeIfPresent(DMGFirstLaunchGuide.self, forKey: .firstLaunchGuide) ?? .default
     }
 
     public static func decode(from data: Data) throws -> DMGProject {
@@ -131,6 +136,31 @@ public enum DMGBackgroundMode: String, Codable, Equatable, Sendable {
     case image
 }
 
+public extension DMGProject {
+    mutating func setFirstLaunchGuideEnabled(_ enabled: Bool) {
+        firstLaunchGuide.enabled = enabled
+        guard enabled else { return }
+
+        window.height = max(window.height, 560)
+
+        if layout.appIcon == DMGLayout.defaultAppIcon {
+            layout.appIcon = DMGLayout.firstLaunchGuideAppIcon
+        }
+        if layout.applicationsIcon == DMGLayout.defaultApplicationsIcon {
+            layout.applicationsIcon = DMGLayout.firstLaunchGuideApplicationsIcon
+        }
+        if background.title == "Drag to install" {
+            background.title = "Install \(appName)"
+        }
+        if background.description == "Drop \(appName) into Applications." {
+            background.description = "Drag to Applications. If macOS blocks first open, use the helper below."
+        }
+        if background.footer == "Packaged with DMGForge." {
+            background.footer = ""
+        }
+    }
+}
+
 public struct DMGGuideArrow: Codable, Equatable, Sendable {
     public var visible: Bool
     public var color: String
@@ -146,5 +176,70 @@ public struct DMGGuideArrow: Codable, Equatable, Sendable {
         visible: true,
         color: "#444444",
         thickness: 7
+    )
+}
+
+public extension DMGLayout {
+    static let defaultAppIcon = DMGPoint(x: 190, y: 198)
+    static let defaultApplicationsIcon = DMGPoint(x: 500, y: 198)
+    static let firstLaunchGuideAppIcon = DMGPoint(x: 190, y: 210)
+    static let firstLaunchGuideApplicationsIcon = DMGPoint(x: 500, y: 210)
+}
+
+public struct DMGFirstLaunchGuide: Codable, Equatable, Sendable {
+    public var enabled: Bool
+    public var helpFileName: String
+    public var securitySettingsShortcutName: String
+    public var securitySettingsURL: String
+    public var helpText: String
+    public var securitySettingsIcon: DMGPoint
+    public var helpFileIcon: DMGPoint
+
+    public init(
+        enabled: Bool,
+        helpFileName: String,
+        securitySettingsShortcutName: String,
+        securitySettingsURL: String,
+        helpText: String,
+        securitySettingsIcon: DMGPoint,
+        helpFileIcon: DMGPoint
+    ) {
+        self.enabled = enabled
+        self.helpFileName = helpFileName
+        self.securitySettingsShortcutName = securitySettingsShortcutName
+        self.securitySettingsURL = securitySettingsURL
+        self.helpText = helpText
+        self.securitySettingsIcon = securitySettingsIcon
+        self.helpFileIcon = helpFileIcon
+    }
+
+    public func resolvedHelpText(appName: String) -> String {
+        let trimmed = helpText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            return helpText
+        }
+
+        return """
+        First launch help
+
+        1. Drag \(appName) into Applications.
+        2. Open \(appName) from Applications.
+        3. If macOS says the app cannot be opened, click Done.
+        4. Double-click Open Security Settings in this window.
+        5. In Privacy & Security, click Open Anyway for \(appName).
+        6. Click Open when macOS asks one more time.
+
+        After this approval, the app should open normally.
+        """
+    }
+
+    public static let `default` = DMGFirstLaunchGuide(
+        enabled: false,
+        helpFileName: "First Launch Help.txt",
+        securitySettingsShortcutName: "Open Security Settings.inetloc",
+        securitySettingsURL: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension",
+        helpText: "",
+        securitySettingsIcon: DMGPoint(x: 190, y: 420),
+        helpFileIcon: DMGPoint(x: 500, y: 420)
     )
 }

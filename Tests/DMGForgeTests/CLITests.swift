@@ -208,6 +208,38 @@ import DMGForgeCore
     #expect(result == .usageError)
 }
 
+@Test func cliFirstLaunchTogglesUnsignedAppGuide() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let projectURL = tempRoot.appendingPathComponent("MyApp.dmgproject")
+    try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+    let project = DMGProjectFactory.makeDefault(
+        appPath: "dist/MyApp.app",
+        appName: "MyApp",
+        version: "1.0.0"
+    )
+    try project.prettyJSONData().write(to: projectURL)
+
+    let enableResult = CLI().run(arguments: ["first-launch", projectURL.path, "--enable"])
+    let enabledProject = try DMGProject.decode(from: Data(contentsOf: projectURL))
+
+    let disableResult = CLI().run(arguments: ["first-launch", projectURL.path, "--disable"])
+    let disabledProject = try DMGProject.decode(from: Data(contentsOf: projectURL))
+
+    #expect(enableResult == .success)
+    #expect(enabledProject.firstLaunchGuide.enabled)
+    #expect(enabledProject.window.height == 560)
+    #expect(enabledProject.layout.appIcon == DMGPoint(x: 190, y: 210))
+    #expect(enabledProject.layout.applicationsIcon == DMGPoint(x: 500, y: 210))
+    #expect(enabledProject.background.title == "Install MyApp")
+    #expect(enabledProject.background.description == "Drag to Applications. If macOS blocks first open, use the helper below.")
+    #expect(enabledProject.background.footer.isEmpty)
+    #expect(disableResult == .success)
+    #expect(!disabledProject.firstLaunchGuide.enabled)
+}
+
 @Test func cliReviewDryRunValidatesProjectWithoutWritingDMG() throws {
     let tempRoot = FileManager.default.temporaryDirectory
         .appendingPathComponent(UUID().uuidString, isDirectory: true)

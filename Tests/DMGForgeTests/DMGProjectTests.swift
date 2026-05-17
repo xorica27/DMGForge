@@ -22,6 +22,9 @@ import Testing
     #expect(project.guideArrow.visible)
     #expect(project.guideArrow.color == "#444444")
     #expect(project.guideArrow.thickness == 7)
+    #expect(!project.firstLaunchGuide.enabled)
+    #expect(project.firstLaunchGuide.helpFileName == "First Launch Help.txt")
+    #expect(project.firstLaunchGuide.securitySettingsShortcutName == "Open Security Settings.inetloc")
 }
 
 @Test func projectRoundTripsThroughPrettyJSON() throws {
@@ -68,6 +71,20 @@ import Testing
     let decoded = try DMGProject.decode(from: Data(json.utf8))
 
     #expect(decoded.guideArrow == .default)
+    #expect(decoded.firstLaunchGuide == .default)
+}
+
+@Test func firstLaunchGuideDefaultHelpTextUsesAppName() throws {
+    let project = DMGProjectFactory.makeDefault(
+        appPath: "dist/MyApp.app",
+        appName: "MyApp",
+        version: "1.0.0"
+    )
+
+    let helpText = project.firstLaunchGuide.resolvedHelpText(appName: project.appName)
+
+    #expect(helpText.contains("Drag MyApp into Applications."))
+    #expect(helpText.contains("Open Anyway"))
 }
 
 @Test func validatorAcceptsExistingAppBundle() throws {
@@ -132,4 +149,22 @@ import Testing
 
     #expect(result.issues.contains(.invalidGuideArrowColor(color: "red")))
     #expect(result.issues.contains(.invalidGuideArrowThickness(thickness: 0)))
+}
+
+@Test func validatorRejectsInvalidFirstLaunchGuideSettingsWhenEnabled() throws {
+    var project = DMGProjectFactory.makeDefault(
+        appPath: "dist/MyApp.app",
+        appName: "MyApp",
+        version: "1.0.0"
+    )
+    project.firstLaunchGuide.enabled = true
+    project.firstLaunchGuide.helpFileName = ""
+    project.firstLaunchGuide.securitySettingsShortcutName = "../Open Security Settings.inetloc"
+    project.firstLaunchGuide.securitySettingsURL = ""
+
+    let result = ProjectValidator().validate(project)
+
+    #expect(result.issues.contains(.invalidFirstLaunchGuideFileName(name: "")))
+    #expect(result.issues.contains(.invalidFirstLaunchGuideFileName(name: "../Open Security Settings.inetloc")))
+    #expect(result.issues.contains(.invalidFirstLaunchGuideURL(url: "")))
 }

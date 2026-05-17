@@ -11,8 +11,8 @@ public enum DMGProjectFactory {
             volumeName: "\(appName) \(version)",
             window: DMGWindow(width: 680, height: 420),
             layout: DMGLayout(
-                appIcon: DMGPoint(x: 190, y: 198),
-                applicationsIcon: DMGPoint(x: 500, y: 198)
+                appIcon: DMGLayout.defaultAppIcon,
+                applicationsIcon: DMGLayout.defaultApplicationsIcon
             ),
             background: DMGBackground(
                 mode: .generated,
@@ -24,4 +24,3 @@ public enum DMGProjectFactory {
         )
     }
 }
-

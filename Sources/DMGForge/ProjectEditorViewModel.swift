@@ -95,6 +95,15 @@ final class ProjectEditorViewModel: ObservableObject {
         statusMessage = "Using generated background."
     }
 
+    func setFirstLaunchGuideEnabled(_ enabled: Bool) {
+        project.setFirstLaunchGuideEnabled(enabled)
+        if enabled {
+            statusMessage = "First launch help guide enabled."
+        } else {
+            statusMessage = "First launch help guide disabled."
+        }
+    }
+
     func exportDMG() {
         let validation = projectValidator.validate(project)
         guard validation.isValid else {
