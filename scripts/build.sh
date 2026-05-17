@@ -115,6 +115,7 @@ fi
   --name "$APP_NAME" \
   --version "$VERSION" \
   --output "$PROJECT_PATH" >/dev/null
+"$BUILD_DIR/dmgforge" first-launch "$PROJECT_PATH" --enable >/dev/null
 
 if [[ "$PACKAGE_DMG" -eq 1 ]]; then
   "$BUILD_DIR/dmgforge" export "$PROJECT_PATH" --output "$DMG_PATH"

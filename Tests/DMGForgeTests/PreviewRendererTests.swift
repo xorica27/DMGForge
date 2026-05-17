@@ -141,6 +141,34 @@ import Testing
     #expect(arrowPixels == 0)
 }
 
+@Test func firstLaunchGuideBackgroundCentersArrowBetweenInstallIcons() throws {
+    let tempRoot = try makeTempDirectory()
+    defer { try? FileManager.default.removeItem(at: tempRoot) }
+    let outputURL = tempRoot.appendingPathComponent("preview.png")
+
+    var project = DMGProjectFactory.makeDefault(
+        appPath: "dist/MyApp.app",
+        appName: "MyApp",
+        version: "1.0.0"
+    )
+    project.setFirstLaunchGuideEnabled(true)
+
+    try PreviewRenderer().renderBackground(project: project, to: outputURL)
+
+    let outputImage = NSImage(contentsOf: outputURL)
+    let tiffData = try #require(outputImage?.tiffRepresentation)
+    let bitmap = try #require(NSBitmapImageRep(data: tiffData))
+    let scale = bitmap.pixelsWide / project.window.width
+    let expectedCenterY = project.layout.appIcon.y * scale
+    let centeredArrowPixels = countDarkGreyArrowPixels(
+        in: bitmap,
+        xRange: 270 * scale..<410 * scale,
+        yRange: (expectedCenterY - 12 * scale)..<(expectedCenterY + 12 * scale)
+    )
+
+    #expect(centeredArrowPixels > 80)
+}
+
 private func makeTempDirectory() throws -> URL {
     let url = FileManager.default.temporaryDirectory
         .appendingPathComponent(UUID().uuidString, isDirectory: true)

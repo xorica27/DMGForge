@@ -2,13 +2,13 @@
   "appName" : "DMGForge",
   "appPath" : "dist\/DMGForge.app",
   "background" : {
-    "description" : "Drop DMGForge into Applications.",
-    "footer" : "Packaged with DMGForge.",
+    "description" : "Drag to Applications. If macOS blocks first open, use the helper below.",
+    "footer" : "",
     "mode" : "generated",
-    "title" : "Drag to install"
+    "title" : "Install DMGForge"
   },
   "firstLaunchGuide" : {
-    "enabled" : false,
+    "enabled" : true,
     "helpFileIcon" : {
       "x" : 500,
       "y" : 420
@@ -30,11 +30,11 @@
   "layout" : {
     "appIcon" : {
       "x" : 190,
-      "y" : 198
+      "y" : 210
     },
     "applicationsIcon" : {
       "x" : 500,
-      "y" : 198
+      "y" : 210
     }
   },
   "outputPath" : "dist\/DMGForge-macos-arm64.dmg",
@@ -42,7 +42,7 @@
   "version" : "0.1.1",
   "volumeName" : "DMGForge 0.1.1",
   "window" : {
-    "height" : 420,
+    "height" : 560,
     "width" : 680
   }
 }

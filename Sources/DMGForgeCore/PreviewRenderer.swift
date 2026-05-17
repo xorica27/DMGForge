@@ -90,7 +90,7 @@ public struct PreviewRenderer {
         if project.guideArrow.visible {
             let finderCenterY = CGFloat(project.layout.appIcon.y + project.layout.applicationsIcon.y) / 2
             drawArrow(
-                centerY: size.height - finderCenterY + 22,
+                centerY: size.height - finderCenterY,
                 arrow: project.guideArrow
             )
         }
